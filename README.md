@@ -1,44 +1,82 @@
 # coding-agent-sdk
 
-> **One API. Three AI coding agents. Zero config.**
+> **Stop building agents. Start building workflows.**
 
-Control Claude Code, Codex CLI, and Gemini CLI from a single, unified interface. Ship AI-powered workflows in minutes.
-
-```bash
-npx coding-agent-sdk -p "Fix the failing tests"
-```
-
-## Why?
-
-You want to build with AI coding agents. But each one has a different API, different output formats, and different quirks. This SDK gives you:
-
-- 🎯 **One interface** for Claude, Codex, and Gemini
-- 🚀 **Auto-detection** - Just set your API key and go
-- 📡 **Streaming events** - Real-time progress, not just final output
-- 🔄 **Session resume** - Pick up where you left off
-- 🎨 **Clean CLI** - Or use the programmatic API
-
-## Quick Start
-
-### CLI Mode
-
-```bash
-# Auto-detect backend from your API keys
-npx coding-agent-sdk -p "Refactor the auth module"
-
-# Specify a backend
-npx coding-agent-sdk -p "Add tests" -b claude
-
-# Resume a session
-npx coding-agent-sdk -p "Continue" -r session_id
-```
-
-### Programmatic API
+Ship agentic workflows that run on your users' existing coding agents—Claude Code, Codex, or Gemini. No agent embedding required.
 
 ```typescript
 import { query } from 'coding-agent-sdk';
 
-// One line. That's it.
+// One API. Works with whatever agent your user has.
+await query("Refactor the auth module");
+```
+
+## The Problem
+
+You want to build an agentic workflow. Maybe it's a code reviewer, a migration tool, or a testing assistant.
+
+So you build it. You embed an agent. You ship it.
+
+**But here's the thing:** Your users already paid for Claude Code. Or Codex. Or Gemini.
+
+**Why would they pay for yours?**
+
+Distribution is the real problem. Not the technology.
+
+## The Solution
+
+**Don't compete with their agents. Use them.**
+
+Break down your workflow into steps. Delegate execution to whatever agent your user already has installed.
+
+```typescript
+// Your workflow
+async function migrateToTypeScript() {
+  await query("Find all .js files in src/");
+  await query("Convert them to TypeScript");
+  await query("Fix any type errors");
+  await query("Run the test suite");
+}
+```
+
+The SDK handles the rest:
+- Auto-detects which agent the user has (Claude, Codex, or Gemini)
+- Translates your request into the right format
+- Streams back unified events
+- Works across all three agents with one API
+
+**Result:** You ship open-source workflows. Users bring their own agent. Everyone wins.
+
+## Why This Matters
+
+**For workflow builders:**
+- Zero distribution friction—users already have the agent
+- No API costs—runs on the user's API key
+- No vendor lock-in—works with any supported agent
+- Focus on workflow logic, not agent implementation
+
+**For users:**
+- Use tools that leverage the agent they already paid for
+- One workflow works with Claude, Codex, or Gemini
+- Keep their existing setup and preferences
+- No new subscriptions or API keys needed
+
+**This is how you build open-source agentic workflows that actually ship.**
+
+## How It Works
+
+Install the SDK:
+
+```bash
+npm install coding-agent-sdk
+```
+
+Build your workflow:
+
+```typescript
+import { query } from 'coding-agent-sdk';
+
+// Your workflow delegates to the user's agent
 const result = await query("Deploy the application");
 
 // Stream events as they happen
@@ -49,104 +87,140 @@ for await (const event of result.events) {
 }
 ```
 
+Your user runs it with their existing agent:
+
+```bash
+# They already have Claude Code, Codex, or Gemini installed
+# They already have an API key
+# Your workflow just works
+```
+
+The SDK:
+1. Auto-detects which agent they have
+2. Spawns the right CLI process
+3. Parses the output into unified events
+4. Returns a clean stream you can work with
+
+## The API
+
+One function. That's it.
+
+```typescript
+query(prompt: string, options?: QueryOptions): Promise<QueryResult>
+```
+
+**Parameters:**
+- `prompt` - What you want the agent to do
+- `options` - Optional backend, session resume, working directory
+
+**Returns:**
+- `sessionId` - Resume the conversation later
+- `events` - Async generator of unified events
+- `backend` - Which agent was used
+
+**Example:**
+
+```typescript
+import { query } from 'coding-agent-sdk';
+
+const result = await query("Add error handling to the API routes");
+
+for await (const event of result.events) {
+  switch (event.type) {
+    case 'message':   // AI responses
+    case 'action':    // File changes, tool calls
+    case 'progress':  // Todo lists, status updates
+    case 'turn':      // Conversation boundaries
+    case 'session':   // Session lifecycle
+    case 'error':     // Warnings and errors
+    case 'metrics':   // Usage statistics
+  }
+}
+```
+
+## Real-World Example
+
+Here's a code review workflow that works with any agent:
+
+```typescript
+import { query } from 'coding-agent-sdk';
+
+async function reviewPullRequest(prNumber: number) {
+  // Step 1: Get the diff
+  const diffResult = await query(`Get the git diff for PR #${prNumber}`);
+
+  // Step 2: Review the changes
+  const reviewResult = await query(
+    `Review this code for:
+    - Security vulnerabilities
+    - Performance issues
+    - Best practices
+    - Test coverage`
+  );
+
+  // Step 3: Suggest improvements
+  await query("Suggest specific improvements with code examples");
+}
+```
+
+Your users run this with Claude, Codex, or Gemini. Same workflow. Zero changes.
+
+## Building Workflows, Not Agents
+
+This SDK is designed for one thing: **building reusable workflows that delegate to existing agents.**
+
+**What you should build:**
+- Code migration tools ("Convert this repo from JS to TS")
+- Automated reviewers ("Review this PR for security issues")
+- Testing assistants ("Generate e2e tests for this feature")
+- Deployment orchestrators ("Deploy to staging and run smoke tests")
+
+**What you shouldn't build:**
+- Another general-purpose coding agent
+- Yet another AI chat interface
+- A wrapper that just adds a UI
+
+The insight: **Workflows are composable and distributable. Agents are not.**
+
+## Philosophy
+
+The future of agentic software is not a thousand competing agents.
+
+It's **workflows that compose existing agents.**
+
+- Agents handle the execution layer
+- Workflows handle the orchestration layer
+- They're decoupled
+
+This SDK is the thin layer between them. One unified interface. Three agents. Infinite workflows.
+
+## Supported Agents
+
+| Agent | CLI | API Key |
+|-------|-----|---------|
+| Claude Code | `claude` | `ANTHROPIC_API_KEY` |
+| OpenAI Codex | `codex` | `OPENAI_API_KEY` |
+| Google Gemini | `gemini` | `GEMINI_API_KEY` |
+
+The SDK auto-detects which one is available. Your workflow just works.
+
 ## Installation
 
 ```bash
 npm install coding-agent-sdk
 ```
 
-**Set your API key:**
+Your users need:
+1. One of the supported CLIs installed (Claude Code, Codex, or Gemini)
+2. The corresponding API key in their environment
 
-```bash
-# Pick one (or all three)
-export ANTHROPIC_API_KEY=your_key    # For Claude
-export OPENAI_API_KEY=your_key       # For Codex
-export GEMINI_API_KEY=your_key       # For Gemini
-```
+That's it. No SDK API keys. No additional setup.
 
-**Install the backend CLI:**
+## Advanced Usage
 
-```bash
-# Claude Code: https://claude.com/code
-# Codex CLI: npm install -g @openai/codex
-# Gemini CLI: https://github.com/google-gemini/gemini-cli
-```
-
-## Features
-
-| Feature | You Get |
-|---------|---------|
-| **Unified API** | One `query()` function for all backends |
-| **Auto-detection** | SDK picks the right backend automatically |
-| **Streaming** | Real-time events, not batch responses |
-| **Session resume** | Continue conversations across runs |
-| **TypeScript** | Full type safety out of the box |
-| **Zero config** | Sensible defaults, easy overrides |
-
-## Event Types
-
-Get **7 unified event types** across all backends:
+### Resume Sessions
 
 ```typescript
-for await (const event of result.events) {
-  switch (event.type) {
-    case 'message':    // AI responses and user messages
-    case 'action':     // Tool calls, file changes, commands
-    case 'progress':   // Todo lists, status updates
-    case 'turn':       // Conversation boundaries, token usage
-    case 'session':    // Session start/end
-    case 'error':      // Warnings and errors
-    case 'metrics':    // Usage statistics
-  }
-}
-```
-
-## Examples
-
-### Get just the AI response
-
-```typescript
-import { query } from 'coding-agent-sdk';
-
-const result = await query("Add error handling");
-
-for await (const event of result.events) {
-  if (event.type === 'message' && event.role === 'assistant') {
-    console.log(event.content);
-  }
-}
-```
-
-### Track progress in real-time
-
-```typescript
-const result = await query("Migrate to TypeScript");
-
-for await (const event of result.events) {
-  if (event.type === 'progress' && event.todo_items) {
-    event.todo_items.forEach(todo => {
-      console.log(`[${todo.status}] ${todo.title}`);
-    });
-  }
-}
-```
-
-### Monitor tool usage
-
-```typescript
-const result = await query("Deploy to production");
-
-for await (const event of result.events) {
-  if (event.type === 'action' && event.subtype === 'tool') {
-    console.log(`${event.tool_name}: ${event.status}`);
-  }
-}
-```
-
-### Resume a conversation
-
-```typescript
-// First run
 const result1 = await query("Start the refactor");
 const sessionId = result1.sessionId;
 
@@ -154,110 +228,62 @@ const sessionId = result1.sessionId;
 const result2 = await query("Continue", { resume: sessionId });
 ```
 
-### Use a specific backend
+### Specify Backend
 
 ```typescript
-const result = await query("Complex task", {
+await query("Deploy", {
   backend: 'claude',
-  workingDir: '/path/to/project',
-  backendOptions: {
-    claude: {
-      maxThinkingTokens: 10000,
-      mcpServers: ['next-devtools-mcp'],
-    },
-  },
+  workingDir: '/path/to/project'
 });
 ```
 
-## CLI Options
+### Stream Progress
+
+```typescript
+const result = await query("Migrate to TypeScript");
+
+for await (const event of result.events) {
+  if (event.type === 'progress' && event.todo_items) {
+    console.log(`Progress: ${event.todo_items.filter(t => t.status === 'completed').length}/${event.todo_items.length} tasks done`);
+  }
+}
+```
+
+### Monitor Actions
+
+```typescript
+const result = await query("Deploy to production");
+
+for await (const event of result.events) {
+  if (event.type === 'action' && event.subtype === 'tool') {
+    console.log(`Action: ${event.tool_name} - ${event.status}`);
+  }
+}
+```
+
+## See It In Action
+
+Want to see the magic? Run this:
 
 ```bash
-npx coding-agent-sdk [options]
-
-Options:
-  -p, --prompt <text>      Your prompt (required)
-  -b, --backend <name>     claude | codex | gemini (auto-detected)
-  -w, --working-dir <dir>  Project directory (default: .)
-  -r, --resume <id>        Resume session by ID
-  -h, --help               Show help
-  -v, --version            Show version
+npx coding-agent-sdk -p "List all TypeScript files"
 ```
 
-## API Reference
+The SDK will:
+1. Auto-detect which agent you have installed (Claude, Codex, or Gemini)
+2. Delegate the task to that agent
+3. Stream back the results
 
-### `query(prompt, options?)`
+No configuration. No setup. It just works.
 
-Main function to query AI agents.
-
-```typescript
-interface QueryOptions {
-  backend?: 'claude' | 'codex' | 'gemini';  // Auto-detected
-  resume?: string;                           // Session ID
-  workingDir?: string;                       // Project path
-  autoApprove?: boolean;                     // Auto-approve actions (default: true)
-  backendOptions?: {
-    claude?: { maxThinkingTokens?: number; mcpServers?: string[] };
-    codex?: { structuredOutput?: boolean; outputSchemaFile?: string };
-    gemini?: { cliArgs?: string[] };
-  };
-}
-
-interface QueryResult {
-  sessionId: string;                              // For resuming
-  events: AsyncGenerator<UnifiedEvent>;           // Event stream
-  backend: 'claude' | 'codex' | 'gemini';        // Backend used
-}
-```
-
-### `isBackendAvailable(backend)`
-
-Check if a backend is available:
-
-```typescript
-import { isBackendAvailable } from 'coding-agent-sdk';
-
-if (await isBackendAvailable('claude')) {
-  console.log('Claude is ready!');
-}
-```
-
-## Error Handling
-
-```typescript
-import { query, NoBackendFoundError } from 'coding-agent-sdk';
-
-try {
-  const result = await query("Deploy");
-  for await (const event of result.events) {
-    if (event.type === 'error') {
-      console.error(event.message);
-    }
-  }
-} catch (error) {
-  if (error instanceof NoBackendFoundError) {
-    console.error('No API key found. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY');
-  }
-}
-```
-
-## Backend Comparison
-
-|  | Claude | Codex | Gemini |
-|--|--------|-------|--------|
-| **Binary** | `claude` | `codex` | `gemini` |
-| **API Key** | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` | `GEMINI_API_KEY` |
-| **Session Resume** | ✅ | ✅ | ✅ |
-| **Extended Thinking** | ✅ | ✅ | ❌ |
-| **Web Search** | ✅ | ✅ | ❌ |
-| **Todo Tracking** | ❌ | ✅ | ❌ |
+The real value is the `query()` API for building workflows, but this shows you how it automatically detects and delegates to whatever agent your users have.
 
 ## Contributing
 
-PRs welcome! Make sure tests pass:
+We're building the interface layer between workflows and agents. PRs welcome.
 
 ```bash
 npm test              # Run tests
-npm run test:coverage # Check coverage (95%+)
 npm run build         # Build
 ```
 
@@ -267,6 +293,6 @@ MIT
 
 ---
 
-**Built with ❤️ by the community**
+**Stop rebuilding the wheel. Start building workflows.**
 
-[GitHub](https://github.com/yourusername/coding-agent-sdk) • [Issues](https://github.com/yourusername/coding-agent-sdk/issues) • [NPM](https://www.npmjs.com/package/coding-agent-sdk)
+[GitHub](https://github.com/yourusername/coding-agent-sdk) • [NPM](https://www.npmjs.com/package/coding-agent-sdk)
