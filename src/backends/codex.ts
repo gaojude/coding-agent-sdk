@@ -57,16 +57,16 @@ export async function* createCodexBackend(
   await checkCodexCLI(cliPath);
 
   // Build CLI arguments
-  const args: string[] = ["exec", "--experimental-json"];
+  const args: string[] = ["exec", "--json"];
 
   // Working directory
   if (options.workingDir) {
     args.push("--cd", options.workingDir);
   }
 
-  // Auto-approve mode (YOLO)
+  // Auto-approve mode (YOLO) - use "never" to skip approvals
   if (options.autoApprove !== false) {
-    args.push("--config", 'approval_policy="auto_approve"');
+    args.push("--config", 'approval_policy="never"');
   }
 
   // Resume session (thread ID)
@@ -122,9 +122,21 @@ export async function* createCodexBackend(
         continue;
       }
 
-      // Extract session ID from thread.started event
+      // Unwrap new format: {"id":"0","msg":{...}}
+      if (event.msg) {
+        event = event.msg;
+      }
+
+      // Skip non-event lines (config, prompt, etc)
+      if (!event.type) {
+        continue;
+      }
+
+      // Extract session ID from thread.started or task_started event
       if (event.type === "thread.started") {
         sessionId = event.thread_id;
+      } else if (event.type === "task_started") {
+        sessionId = sessionId || "codex-session";
       }
 
       // Map to unified events

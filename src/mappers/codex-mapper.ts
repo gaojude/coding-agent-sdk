@@ -15,8 +15,42 @@ export function mapCodexEvent(event: ThreadEvent): UnifiedEvent[] {
   const events: UnifiedEvent[] = [];
 
   switch (event.type) {
+    case 'task_started':
+      // Session initialization (new format)
+      events.push({
+        type: 'session',
+        subtype: 'init',
+        session_id: 'codex-session',
+        backend: 'codex',
+      });
+      break;
+
+    case 'agent_message':
+      // Agent response message (new format)
+      events.push({
+        type: 'message',
+        role: 'assistant',
+        content: event.message || '',
+      });
+      break;
+
+    case 'token_count':
+      // Token usage (new format)
+      if (event.info?.total_token_usage) {
+        events.push({
+          type: 'turn',
+          subtype: 'completed',
+          usage: {
+            input_tokens: event.info.total_token_usage.input_tokens,
+            output_tokens: event.info.total_token_usage.output_tokens,
+            cached_tokens: event.info.total_token_usage.cached_input_tokens || 0,
+          },
+        });
+      }
+      break;
+
     case 'thread.started':
-      // Session initialization
+      // Session initialization (old format)
       events.push({
         type: 'session',
         subtype: 'init',
@@ -26,7 +60,7 @@ export function mapCodexEvent(event: ThreadEvent): UnifiedEvent[] {
       break;
 
     case 'turn.started':
-      // Turn started
+      // Turn started (old format)
       events.push({
         type: 'turn',
         subtype: 'started',
@@ -34,7 +68,7 @@ export function mapCodexEvent(event: ThreadEvent): UnifiedEvent[] {
       break;
 
     case 'turn.completed':
-      // Turn completed with usage
+      // Turn completed with usage (old format)
       events.push({
         type: 'turn',
         subtype: 'completed',
@@ -47,7 +81,7 @@ export function mapCodexEvent(event: ThreadEvent): UnifiedEvent[] {
       break;
 
     case 'turn.failed':
-      // Turn failed
+      // Turn failed (old format)
       events.push({
         type: 'turn',
         subtype: 'failed',
@@ -58,7 +92,7 @@ export function mapCodexEvent(event: ThreadEvent): UnifiedEvent[] {
     case 'item.started':
     case 'item.updated':
     case 'item.completed':
-      // Map item to unified events
+      // Map item to unified events (old format)
       events.push(...mapCodexItem(event.item, event.type));
       break;
 
