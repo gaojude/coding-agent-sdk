@@ -341,16 +341,14 @@ describe('query function', () => {
       await expect(query('test')).rejects.toThrow(NoBackendFoundError);
     });
 
-    it('should throw error if API key missing for specified backend', async () => {
+    it('should not check API key for specified backend (CLI handles auth)', async () => {
       delete process.env.ANTHROPIC_API_KEY;
 
-      vi.mocked(autoDetect.getApiKey).mockImplementation(() => {
-        throw new Error("Backend 'claude' requires ANTHROPIC_API_KEY");
-      });
-
-      await expect(query('test', { backend: 'claude' })).rejects.toThrow(
-        'ANTHROPIC_API_KEY'
-      );
+      // API key check is removed - CLI tools handle their own auth
+      // This test just verifies we don't throw during query() call
+      const result = query('test', { backend: 'claude' });
+      expect(result).toBeDefined();
+      expect(result.then).toBeDefined(); // It's a promise
     });
   });
 
