@@ -1,6 +1,6 @@
 {
   "name": "coding-agent-sdk",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Build agentic workflows that delegate to your users' existing coding agents (Claude Code, Codex, Gemini). Stop building agents. Start building workflows.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -17,7 +17,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsup src/index.ts src/cli.ts --format esm,cjs --dts --clean",
