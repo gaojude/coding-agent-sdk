@@ -263,11 +263,10 @@ export async function detectBackend(): Promise<DetectionResult> {
     );
   }
 
-  // Multiple binaries found - pick first one and warn
+  // Multiple binaries found - pick first one
   if (availableBackends.length > 1) {
     const backend = availableBackends[0];
-    console.warn(`⚠️  Warning: Multiple backends detected: ${availableBackends.join(', ')}. Using '${backend}'.`);
-    console.warn(`   To suppress this warning, specify options.backend explicitly.`);
+    console.warn(`⚠️  Multiple backends detected: ${availableBackends.join(', ')}. Using '${backend}'.`);
   }
 
   // Use first available backend
@@ -309,7 +308,7 @@ export async function isBackendAvailable(backend: Backend): Promise<boolean> {
       case "claude":
         return !!process.env.ANTHROPIC_API_KEY;
       case "codex":
-        return !!process.env.CODEX_API_KEY;
+        return !!process.env.OPENAI_API_KEY;
       case "gemini":
         return !!process.env.GEMINI_API_KEY;
     }
@@ -333,8 +332,8 @@ export function getApiKey(backend: Backend): string {
       envVar = "ANTHROPIC_API_KEY";
       break;
     case "codex":
-      key = process.env.CODEX_API_KEY;
-      envVar = "CODEX_API_KEY";
+      key = process.env.OPENAI_API_KEY;
+      envVar = "OPENAI_API_KEY";
       break;
     case "gemini":
       key = process.env.GEMINI_API_KEY;

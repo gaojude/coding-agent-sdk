@@ -58,7 +58,7 @@ describe('NoBackendFoundError', () => {
     const error = new NoBackendFoundError();
     expect(error.message).toContain('No backend could be auto-detected');
     expect(error.message).toContain('ANTHROPIC_API_KEY');
-    expect(error.message).toContain('CODEX_API_KEY');
+    expect(error.message).toContain('OPENAI_API_KEY');
     expect(error.message).toContain('GEMINI_API_KEY');
     expect(error.code).toBe('NO_BACKEND_FOUND');
     expect(error.name).toBe('NoBackendFoundError');

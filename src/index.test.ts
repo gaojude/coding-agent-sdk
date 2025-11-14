@@ -72,7 +72,7 @@ describe('query function', () => {
     });
 
     it('should auto-detect backend when not specified', async () => {
-      process.env.CODEX_API_KEY = 'test-key';
+      process.env.OPENAI_API_KEY = 'test-key';
 
       // Mock auto-detection
       vi.mocked(autoDetect.detectBackend).mockResolvedValue({
@@ -118,7 +118,7 @@ describe('query function', () => {
     });
 
     it('should return codex backend when specified', async () => {
-      process.env.CODEX_API_KEY = 'test-key';
+      process.env.OPENAI_API_KEY = 'test-key';
       vi.mocked(autoDetect.getApiKey).mockReturnValue('test-key');
 
       const mockEvents = (async function* () {
@@ -331,7 +331,7 @@ describe('query function', () => {
   describe('error handling', () => {
     it('should throw NoBackendFoundError when auto-detect fails', async () => {
       delete process.env.ANTHROPIC_API_KEY;
-      delete process.env.CODEX_API_KEY;
+      delete process.env.OPENAI_API_KEY;
       delete process.env.GEMINI_API_KEY;
 
       vi.mocked(autoDetect.detectBackend).mockRejectedValue(

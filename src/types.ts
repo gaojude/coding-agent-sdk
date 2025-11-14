@@ -12,7 +12,7 @@ export interface QueryOptions {
   /**
    * Backend to use. If not specified, auto-detects from environment variables:
    * - ANTHROPIC_API_KEY → 'claude'
-   * - CODEX_API_KEY → 'codex'
+   * - OPENAI_API_KEY → 'codex'
    * - GEMINI_API_KEY → 'gemini'
    */
   backend?: Backend;
@@ -171,7 +171,7 @@ export class BackendNotAvailableError extends CodingAgentError {
 export class NoBackendFoundError extends CodingAgentError {
   constructor(message?: string) {
     super(
-      message || 'No backend could be auto-detected. Please set one of: ANTHROPIC_API_KEY, CODEX_API_KEY, or GEMINI_API_KEY and ensure the corresponding binary (claude, codex, gemini) is installed.',
+      message || 'No backend could be auto-detected. Please set one of: ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY and ensure the corresponding binary (claude, codex, gemini) is installed.',
       'NO_BACKEND_FOUND'
     );
     this.name = 'NoBackendFoundError';

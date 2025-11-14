@@ -32,7 +32,7 @@ describe("getApiKey", () => {
   });
 
   it("should get Codex API key", () => {
-    process.env.CODEX_API_KEY = "test-codex-key";
+    process.env.OPENAI_API_KEY = "test-codex-key";
     expect(getApiKey("codex")).toBe("test-codex-key");
   });
 
@@ -49,9 +49,9 @@ describe("getApiKey", () => {
   });
 
   it("should throw error if Codex API key not set", () => {
-    delete process.env.CODEX_API_KEY;
+    delete process.env.OPENAI_API_KEY;
     expect(() => getApiKey("codex")).toThrow(
-      "Backend 'codex' requires CODEX_API_KEY"
+      "Backend 'codex' requires OPENAI_API_KEY"
     );
   });
 
@@ -217,7 +217,7 @@ describe("detectBackend", () => {
   }, 10000);
 
   it("should detect Codex backend when only codex binary found", async () => {
-    process.env.CODEX_API_KEY = "test-codex-key";
+    process.env.OPENAI_API_KEY = "test-codex-key";
 
     vi.mocked(spawn).mockImplementation((command: any, args: any) => {
       const mockChild = new EventEmitter() as any;
@@ -305,7 +305,7 @@ describe("detectBackend", () => {
 
   it("should use first backend and warn if multiple binaries available", async () => {
     process.env.ANTHROPIC_API_KEY = "test-claude-key";
-    process.env.CODEX_API_KEY = "test-codex-key";
+    process.env.OPENAI_API_KEY = "test-codex-key";
 
     // Spy on console.warn
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
