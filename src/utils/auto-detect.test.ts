@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { detectBackend, isBackendAvailable, getApiKey } from "./auto-detect.js";
-import { NoBackendFoundError, MultipleBackendsFoundError } from "../types.js";
+import { NoBackendFoundError } from "../types.js";
 import { spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { existsSync } from "node:fs";
@@ -303,9 +303,12 @@ describe("detectBackend", () => {
     await expect(detectBackend()).rejects.toThrow("API key not configured");
   }, 10000);
 
-  it("should throw MultipleBackendsFoundError if multiple binaries available", async () => {
+  it("should use first backend and warn if multiple binaries available", async () => {
     process.env.ANTHROPIC_API_KEY = "test-claude-key";
     process.env.CODEX_API_KEY = "test-codex-key";
+
+    // Spy on console.warn
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     // Make claude and codex binaries succeed
     vi.mocked(spawn).mockImplementation((command: any, args: any) => {
@@ -324,6 +327,12 @@ describe("detectBackend", () => {
       return mockChild;
     });
 
-    await expect(detectBackend()).rejects.toThrow(MultipleBackendsFoundError);
+    const result = await detectBackend();
+    expect(result.backend).toBe("claude"); // First one (alphabetically)
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Multiple backends detected")
+    );
+
+    warnSpy.mockRestore();
   }, 15000);
 });

@@ -232,18 +232,17 @@ async function isBinaryAvailable(binaryName: string): Promise<boolean> {
 
 /**
  * Auto-detect backend by finding available agent binaries.
- * 
+ *
  * Detection strategy:
  * 1. Check which agent binaries are installed (claude, codex, gemini)
  * 2. If exactly one binary found, use it (assume API keys are configured)
- * 3. If multiple binaries found, throw error
+ * 3. If multiple binaries found, use first one and log a warning
  * 4. If no binaries found, throw error
  *
  * Philosophy: If they have the binary installed, they have the setup done.
  * API keys are validated at runtime when actually needed.
  *
  * @throws {NoBackendFoundError} If no agent binary is found
- * @throws {MultipleBackendsFoundError} If multiple agent binaries are found
  */
 export async function detectBackend(): Promise<DetectionResult> {
   const backends: Backend[] = ["claude", "codex", "gemini"];
@@ -264,12 +263,14 @@ export async function detectBackend(): Promise<DetectionResult> {
     );
   }
 
-  // Multiple binaries found
+  // Multiple binaries found - pick first one and warn
   if (availableBackends.length > 1) {
-    throw new MultipleBackendsFoundError(availableBackends);
+    const backend = availableBackends[0];
+    console.warn(`⚠️  Warning: Multiple backends detected: ${availableBackends.join(', ')}. Using '${backend}'.`);
+    console.warn(`   To suppress this warning, specify options.backend explicitly.`);
   }
 
-  // Exactly one binary found - perfect!
+  // Use first available backend
   const backend = availableBackends[0];
   
   // Get API key (will throw if not set, but that's expected at runtime)
