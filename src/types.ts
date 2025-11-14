@@ -10,10 +10,10 @@ import type { Backend, UnifiedEvent } from './events.js';
 
 export interface QueryOptions {
   /**
-   * Backend to use. If not specified, auto-detects from environment variables:
-   * - ANTHROPIC_API_KEY → 'claude'
-   * - OPENAI_API_KEY → 'codex'
-   * - GEMINI_API_KEY → 'gemini'
+   * Backend to use. If not specified, auto-detects from installed CLI binaries:
+   * - claude → 'claude'
+   * - codex → 'codex'
+   * - gemini → 'gemini'
    */
   backend?: Backend;
 
@@ -171,7 +171,7 @@ export class BackendNotAvailableError extends CodingAgentError {
 export class NoBackendFoundError extends CodingAgentError {
   constructor(message?: string) {
     super(
-      message || 'No backend could be auto-detected. Please set one of: ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY and ensure the corresponding binary (claude, codex, gemini) is installed.',
+      message || 'No backend could be auto-detected. Please install at least one agent CLI: claude, codex, or gemini.',
       'NO_BACKEND_FOUND'
     );
     this.name = 'NoBackendFoundError';

@@ -119,7 +119,7 @@ describe("isBackendAvailable", () => {
     expect(result).toBe(false);
   });
 
-  it("should return false if binary available but API key missing", async () => {
+  it("should return true if binary available (even without API key)", async () => {
     delete process.env.ANTHROPIC_API_KEY;
 
     // Mock binary exists
@@ -127,19 +127,19 @@ describe("isBackendAvailable", () => {
       const mockChild = new EventEmitter() as any;
       mockChild.kill = vi.fn();
       mockChild.stdout = new EventEmitter();
-      
+
       if (command === "claude") {
         setTimeout(() => mockChild.emit("exit", 0), 0);
       } else {
         setTimeout(() => mockChild.emit("exit", 1), 0);
       }
-      
+
       return mockChild;
     });
 
     const result = await isBackendAvailable("claude");
-    // Binary exists but API key missing
-    expect(result).toBe(false);
+    // Binary exists - API key check is handled by CLI itself
+    expect(result).toBe(true);
   });
 
   it("should return false if binary exits with non-zero code", async () => {
@@ -213,7 +213,7 @@ describe("detectBackend", () => {
 
     const result = await detectBackend();
     expect(result.backend).toBe("claude");
-    expect(result.apiKey).toBe("test-claude-key");
+    // API key not checked - CLI handles auth
   }, 10000);
 
   it("should detect Codex backend when only codex binary found", async () => {
@@ -237,7 +237,7 @@ describe("detectBackend", () => {
 
     const result = await detectBackend();
     expect(result.backend).toBe("codex");
-    expect(result.apiKey).toBe("test-codex-key");
+    // API key not checked - CLI handles auth
   }, 10000);
 
   it("should detect Gemini backend when only gemini binary found", async () => {
@@ -261,7 +261,7 @@ describe("detectBackend", () => {
 
     const result = await detectBackend();
     expect(result.backend).toBe("gemini");
-    expect(result.apiKey).toBe("test-gemini-key");
+    // API key not checked - CLI handles auth
   }, 10000);
 
   it("should throw NoBackendFoundError if no binaries found", async () => {
@@ -278,7 +278,7 @@ describe("detectBackend", () => {
     await expect(detectBackend()).rejects.toThrow("No agent binaries found");
   }, 15000);
 
-  it("should throw NoBackendFoundError if binary found but API key missing", async () => {
+  it("should succeed if binary found even without API key", async () => {
     delete process.env.ANTHROPIC_API_KEY;
 
     vi.mocked(spawn).mockImplementation((command: any, args: any) => {
@@ -299,8 +299,9 @@ describe("detectBackend", () => {
       return mockChild;
     });
 
-    await expect(detectBackend()).rejects.toThrow(NoBackendFoundError);
-    await expect(detectBackend()).rejects.toThrow("API key not configured");
+    const result = await detectBackend();
+    expect(result.backend).toBe("claude");
+    // API key check is handled by the CLI tool itself
   }, 10000);
 
   it("should use first backend and warn if multiple binaries available", async () => {

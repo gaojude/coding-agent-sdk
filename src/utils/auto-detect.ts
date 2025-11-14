@@ -271,50 +271,21 @@ export async function detectBackend(): Promise<DetectionResult> {
 
   // Use first available backend
   const backend = availableBackends[0];
-  
-  // Get API key (will throw if not set, but that's expected at runtime)
-  let apiKey: string;
-  try {
-    apiKey = getApiKey(backend);
-  } catch (error) {
-    // Binary exists but API key not set - inform user
-    throw new NoBackendFoundError(
-      `Found '${backend}' binary but API key not configured. ${error instanceof Error ? error.message : "Set the appropriate environment variable."}`
-    );
-  }
 
+  // Return backend - let the CLI tools handle their own authentication
   return {
     backend,
-    apiKey,
+    apiKey: '', // Not needed - CLI tools handle auth themselves
   };
 }
 
 /**
- * Check if a specific backend is available (binary exists + API key configured).
- * Prioritizes binary detection since if they have the binary, they likely have the setup.
+ * Check if a specific backend is available (binary exists).
+ * We only check for the binary - the CLI tools handle their own authentication.
  */
 export async function isBackendAvailable(backend: Backend): Promise<boolean> {
-  // Check binary first (primary indicator of availability)
   const binaryName = backend; // binary name matches backend name
-  const hasBinary = await isBinaryAvailable(binaryName);
-  
-  if (!hasBinary) {
-    return false;
-  }
-
-  // Check API key (secondary check for complete setup)
-  const hasApiKey = (() => {
-    switch (backend) {
-      case "claude":
-        return !!process.env.ANTHROPIC_API_KEY;
-      case "codex":
-        return !!process.env.OPENAI_API_KEY;
-      case "gemini":
-        return !!process.env.GEMINI_API_KEY;
-    }
-  })();
-
-  return hasApiKey;
+  return await isBinaryAvailable(binaryName);
 }
 
 /**

@@ -158,12 +158,7 @@ async function main(): Promise<void> {
       console.error(`\n❌ Error: ${error.message}`);
 
       // Provide helpful hints for common errors
-      if (error.message.includes("API key")) {
-        console.error("\n💡 Tip: Make sure you've set the appropriate API key:");
-        console.error("   - ANTHROPIC_API_KEY for Claude");
-        console.error("   - OPENAI_API_KEY for Codex");
-        console.error("   - GEMINI_API_KEY for Gemini");
-      } else if (error.message.includes("No agent binaries found")) {
+      if (error.message.includes("No backend") || error.message.includes("No agent binaries")) {
         console.error("\n💡 Tip: Install at least one agent CLI:");
         console.error("   - Claude: https://claude.com/code");
         console.error("   - Codex: npm install -g @openai/codex");

@@ -6,7 +6,7 @@
 import type { Backend, UnifiedEvent } from './events.js';
 import type { QueryOptions, QueryResult } from './types.js';
 import { NoBackendFoundError } from './types.js';
-import { detectBackend, getApiKey } from './utils/auto-detect.js';
+import { detectBackend } from './utils/auto-detect.js';
 import { createClaudeBackend } from './backends/claude.js';
 import { createCodexBackend } from './backends/codex.js';
 import { createGeminiBackend } from './backends/gemini.js';
@@ -74,10 +74,9 @@ export async function query(
   let backend: Backend;
   if (options.backend) {
     backend = options.backend;
-    // Verify API key is set for selected backend
-    getApiKey(backend);
+    // No need to check API key - CLI tools handle their own auth
   } else {
-    // Auto-detect from environment variables AND binary availability
+    // Auto-detect from available binaries
     const detection = await detectBackend();
     backend = detection.backend;
   }
