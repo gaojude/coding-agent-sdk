@@ -90,7 +90,7 @@ async function main(): Promise<void> {
     // Handle --version
     if (options.version) {
       // Hardcoded version - will be updated during build
-      console.log("0.2.2");
+      console.log("0.2.3");
       process.exit(0);
     }
 

@@ -94,7 +94,7 @@ export async function* createCodexBackend(
     env: {
       ...process.env,
       // Ensure API key is passed
-      CODEX_API_KEY: process.env.CODEX_API_KEY,
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     },
   });
 

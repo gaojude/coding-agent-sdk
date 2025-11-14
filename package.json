@@ -1,6 +1,6 @@
 {
   "name": "coding-agent-sdk",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Unified SDK for Claude Code, Codex CLI, and Gemini CLI - programmatic access to AI coding agents",
   "type": "module",
   "main": "./dist/index.cjs",
