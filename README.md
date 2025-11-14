@@ -5,6 +5,7 @@
 ## Features
 
 ✅ **Unified API** - Single `query()` function works across all three backends
+✅ **CLI Mode** - Run queries directly from command line with `npx coding-agent-sdk`
 ✅ **Auto-detection** - Automatically selects backend based on environment variables
 ✅ **Streaming Events** - Real-time event streaming with unified event schema
 ✅ **Session Management** - Resume previous sessions across all backends
@@ -39,6 +40,31 @@ npm install -g @openai/codex
 **Important:** The SDK spawns CLI processes directly (`claude`, `codex`, `gemini`). Make sure the binaries are in your PATH.
 
 ## Quick Start
+
+### Option A: CLI Mode (Easiest)
+
+Run queries directly from the command line:
+
+```bash
+# Auto-detect backend and run a query
+npx coding-agent-sdk -p "Fix the failing tests"
+
+# Use a specific backend
+npx coding-agent-sdk -p "Add type annotations" -b claude
+
+# Show help
+npx coding-agent-sdk --help
+```
+
+**CLI Options:**
+- `-p, --prompt <text>` - Prompt to send to the agent (required)
+- `-b, --backend <name>` - Backend to use: claude, codex, or gemini (auto-detected if not specified)
+- `-w, --working-dir <dir>` - Working directory (default: current directory)
+- `-r, --resume <id>` - Resume from a previous session ID
+- `-h, --help` - Show help message
+- `-v, --version` - Show version number
+
+### Option B: Programmatic API
 
 ### 1. Set up API Keys
 

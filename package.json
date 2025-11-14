@@ -1,11 +1,14 @@
 {
   "name": "coding-agent-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Unified SDK for Claude Code, Codex CLI, and Gemini CLI - programmatic access to AI coding agents",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "coding-agent-sdk": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,8 +20,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
-    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "build": "tsup src/index.ts src/cli.ts --format esm,cjs --dts --clean",
+    "dev": "tsup src/index.ts src/cli.ts --format esm,cjs --dts --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

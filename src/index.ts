@@ -166,7 +166,7 @@ export async function query(
  * }
  * ```
  */
-export { isBackendAvailable } from './utils/auto-detect.js';
+export { isBackendAvailable, detectBackend } from './utils/auto-detect.js';
 
 // Default export
 export default query;

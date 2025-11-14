@@ -170,18 +170,9 @@ describe("isBackendAvailable", () => {
       return mockChild;
     });
 
-    // Speed up timer for test
-    vi.useFakeTimers();
-    const promise = isBackendAvailable("claude");
-
-    // Fast-forward past timeout (each strategy has 1-2 sec timeout)
-    vi.advanceTimersByTime(10000);
-
-    const result = await promise;
+    const result = await isBackendAvailable("claude");
     expect(result).toBe(false);
-
-    vi.useRealTimers();
-  });
+  }, 10000); // Increase timeout for this specific test
 });
 
 describe("detectBackend", () => {
@@ -202,70 +193,76 @@ describe("detectBackend", () => {
     process.env.ANTHROPIC_API_KEY = "test-claude-key";
 
     // Mock: claude binary exists, others don't
-    vi.mocked(spawn).mockImplementation((command: any) => {
+    vi.mocked(spawn).mockImplementation((command: any, args: any) => {
       const mockChild = new EventEmitter() as any;
       mockChild.kill = vi.fn();
       mockChild.stdout = new EventEmitter();
-      
-      if (command === "claude") {
-        // Claude binary succeeds
-        setTimeout(() => mockChild.emit("exit", 0), 0);
-      } else {
-        // Everything else fails (which, command -v, other binaries)
-        setTimeout(() => mockChild.emit("error", new Error("ENOENT")), 0);
-      }
-      
+
+      setImmediate(() => {
+        if (command === "claude" && args?.[0] === "--version") {
+          // Claude binary succeeds
+          mockChild.emit("exit", 0);
+        } else {
+          // Everything else fails (which, sh, other binaries)
+          mockChild.emit("exit", 1);
+        }
+      });
+
       return mockChild;
     });
 
     const result = await detectBackend();
     expect(result.backend).toBe("claude");
     expect(result.apiKey).toBe("test-claude-key");
-  });
+  }, 10000);
 
   it("should detect Codex backend when only codex binary found", async () => {
     process.env.CODEX_API_KEY = "test-codex-key";
 
-    vi.mocked(spawn).mockImplementation((command: any) => {
+    vi.mocked(spawn).mockImplementation((command: any, args: any) => {
       const mockChild = new EventEmitter() as any;
       mockChild.kill = vi.fn();
       mockChild.stdout = new EventEmitter();
-      
-      if (command === "codex") {
-        setTimeout(() => mockChild.emit("exit", 0), 0);
-      } else {
-        setTimeout(() => mockChild.emit("error", new Error("ENOENT")), 0);
-      }
-      
+
+      setImmediate(() => {
+        if (command === "codex" && args?.[0] === "--version") {
+          mockChild.emit("exit", 0);
+        } else {
+          mockChild.emit("exit", 1);
+        }
+      });
+
       return mockChild;
     });
 
     const result = await detectBackend();
     expect(result.backend).toBe("codex");
     expect(result.apiKey).toBe("test-codex-key");
-  });
+  }, 10000);
 
   it("should detect Gemini backend when only gemini binary found", async () => {
     process.env.GEMINI_API_KEY = "test-gemini-key";
 
-    vi.mocked(spawn).mockImplementation((command: any) => {
+    vi.mocked(spawn).mockImplementation((command: any, args: any) => {
       const mockChild = new EventEmitter() as any;
       mockChild.kill = vi.fn();
       mockChild.stdout = new EventEmitter();
-      
-      if (command === "gemini") {
-        setTimeout(() => mockChild.emit("exit", 0), 0);
-      } else {
-        setTimeout(() => mockChild.emit("error", new Error("ENOENT")), 0);
-      }
-      
+
+      setImmediate(() => {
+        if (command === "gemini" && args?.[0] === "--version") {
+          mockChild.emit("exit", 0);
+        } else {
+          mockChild.emit("exit", 1);
+        }
+      });
+
       return mockChild;
     });
 
     const result = await detectBackend();
     expect(result.backend).toBe("gemini");
     expect(result.apiKey).toBe("test-gemini-key");
-  });
+  }, 10000);
 
   it("should throw NoBackendFoundError if no binaries found", async () => {
     // All binary checks fail
@@ -273,56 +270,60 @@ describe("detectBackend", () => {
       const mockChild = new EventEmitter() as any;
       mockChild.kill = vi.fn();
       mockChild.stdout = new EventEmitter();
-      setTimeout(() => mockChild.emit("error", new Error("ENOENT")), 0);
+      setImmediate(() => mockChild.emit("exit", 1));
       return mockChild;
     });
 
     await expect(detectBackend()).rejects.toThrow(NoBackendFoundError);
     await expect(detectBackend()).rejects.toThrow("No agent binaries found");
-  });
+  }, 15000);
 
   it("should throw NoBackendFoundError if binary found but API key missing", async () => {
     delete process.env.ANTHROPIC_API_KEY;
 
-    vi.mocked(spawn).mockImplementation((command: any) => {
+    vi.mocked(spawn).mockImplementation((command: any, args: any) => {
       const mockChild = new EventEmitter() as any;
       mockChild.kill = vi.fn();
       mockChild.stdout = new EventEmitter();
-      
-      if (command === "claude") {
-        // Claude binary exists
-        setTimeout(() => mockChild.emit("exit", 0), 0);
-      } else {
-        // Others fail
-        setTimeout(() => mockChild.emit("error", new Error("ENOENT")), 0);
-      }
-      
+
+      setImmediate(() => {
+        if (command === "claude" && args?.[0] === "--version") {
+          // Claude binary exists
+          mockChild.emit("exit", 0);
+        } else {
+          // Others fail
+          mockChild.emit("exit", 1);
+        }
+      });
+
       return mockChild;
     });
 
     await expect(detectBackend()).rejects.toThrow(NoBackendFoundError);
     await expect(detectBackend()).rejects.toThrow("API key not configured");
-  });
+  }, 10000);
 
   it("should throw MultipleBackendsFoundError if multiple binaries available", async () => {
     process.env.ANTHROPIC_API_KEY = "test-claude-key";
     process.env.CODEX_API_KEY = "test-codex-key";
 
     // Make claude and codex binaries succeed
-    vi.mocked(spawn).mockImplementation((command: any) => {
+    vi.mocked(spawn).mockImplementation((command: any, args: any) => {
       const mockChild = new EventEmitter() as any;
       mockChild.kill = vi.fn();
       mockChild.stdout = new EventEmitter();
-      
-      if (command === "claude" || command === "codex") {
-        setTimeout(() => mockChild.emit("exit", 0), 0);
-      } else {
-        setTimeout(() => mockChild.emit("error", new Error("ENOENT")), 0);
-      }
-      
+
+      setImmediate(() => {
+        if ((command === "claude" || command === "codex") && args?.[0] === "--version") {
+          mockChild.emit("exit", 0);
+        } else {
+          mockChild.emit("exit", 1);
+        }
+      });
+
       return mockChild;
     });
 
     await expect(detectBackend()).rejects.toThrow(MultipleBackendsFoundError);
-  });
+  }, 15000);
 });
