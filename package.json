@@ -1,6 +1,6 @@
 {
   "name": "coding-agent-sdk",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Build agentic workflows that delegate to your users' existing coding agents (Claude Code, Codex, Gemini).",
   "type": "module",
   "main": "./dist/index.cjs",
