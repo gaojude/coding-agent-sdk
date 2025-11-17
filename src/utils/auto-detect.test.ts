@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { detectBackend, isBackendAvailable, getApiKey } from "./auto-detect.js";
+import { detectBackend, isBackendAvailable } from "./auto-detect.js";
 import { NoBackendFoundError } from "../types.js";
 import { spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
@@ -14,54 +14,6 @@ vi.mock("node:child_process");
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
 }));
-
-describe("getApiKey", () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    process.env = { ...originalEnv };
-  });
-
-  afterEach(() => {
-    process.env = originalEnv;
-  });
-
-  it("should get Claude API key", () => {
-    process.env.ANTHROPIC_API_KEY = "test-claude-key";
-    expect(getApiKey("claude")).toBe("test-claude-key");
-  });
-
-  it("should get Codex API key", () => {
-    process.env.OPENAI_API_KEY = "test-codex-key";
-    expect(getApiKey("codex")).toBe("test-codex-key");
-  });
-
-  it("should get Gemini API key", () => {
-    process.env.GEMINI_API_KEY = "test-gemini-key";
-    expect(getApiKey("gemini")).toBe("test-gemini-key");
-  });
-
-  it("should throw error if Claude API key not set", () => {
-    delete process.env.ANTHROPIC_API_KEY;
-    expect(() => getApiKey("claude")).toThrow(
-      "Backend 'claude' requires ANTHROPIC_API_KEY"
-    );
-  });
-
-  it("should throw error if Codex API key not set", () => {
-    delete process.env.OPENAI_API_KEY;
-    expect(() => getApiKey("codex")).toThrow(
-      "Backend 'codex' requires OPENAI_API_KEY"
-    );
-  });
-
-  it("should throw error if Gemini API key not set", () => {
-    delete process.env.GEMINI_API_KEY;
-    expect(() => getApiKey("gemini")).toThrow(
-      "Backend 'gemini' requires GEMINI_API_KEY"
-    );
-  });
-});
 
 describe("isBackendAvailable", () => {
   const originalEnv = process.env;

@@ -1,8 +1,10 @@
+
+
+
+
 # coding-agent-sdk
 
-> **Stop building agents. Start building workflows.**
-
-Ship agentic workflows that run on your users' existing coding agents—Claude Code, Codex, or Gemini. No agent embedding required.
+Build agentic workflows that delegate to your users' existing coding agents—Claude Code, Codex, or Gemini.
 
 ```typescript
 import { query } from 'coding-agent-sdk';
@@ -11,23 +13,9 @@ import { query } from 'coding-agent-sdk';
 await query("Refactor the auth module");
 ```
 
-## The Problem
+## Overview
 
-You want to build an agentic workflow. Maybe it's a code reviewer, a migration tool, or a testing assistant.
-
-So you build it. You embed an agent. You ship it.
-
-**But here's the thing:** Your users already paid for Claude Code. Or Codex. Or Gemini.
-
-**Why would they pay for yours?**
-
-Distribution is the real problem. Not the technology.
-
-## The Solution
-
-**Don't compete with their agents. Use them.**
-
-Break down your workflow into steps. Delegate execution to whatever agent your user already has installed.
+This SDK enables you to build agentic workflows (code reviewers, migration tools, testing assistants) that leverage coding agents your users already have installed. Instead of embedding your own agent, delegate tasks to the user's existing setup—whether that's Claude Code, Codex, or Gemini.
 
 ```typescript
 // Your workflow
@@ -39,29 +27,25 @@ async function migrateToTypeScript() {
 }
 ```
 
-The SDK handles the rest:
-- Auto-detects which agent the user has (Claude, Codex, or Gemini)
-- Translates your request into the right format
-- Streams back unified events
-- Works across all three agents with one API
+The SDK handles:
+- Auto-detection of available agents (Claude, Codex, or Gemini)
+- Translation of requests into the appropriate format
+- Unified event streaming across different agents
+- Single API that works with all supported agents
 
-**Result:** You ship open-source workflows. Users bring their own agent. Everyone wins.
-
-## Why This Matters
+## Benefits
 
 **For workflow builders:**
-- Zero distribution friction—users already have the agent
-- No API costs—runs on the user's API key
-- No vendor lock-in—works with any supported agent
-- Focus on workflow logic, not agent implementation
+- Users already have the agent installed
+- No API costs—runs on the user's credentials
+- No vendor lock-in—supports multiple agents
+- Focus on workflow logic instead of agent implementation
 
 **For users:**
-- Use tools that leverage the agent they already paid for
-- One workflow works with Claude, Codex, or Gemini
-- Keep their existing setup and preferences
-- No new subscriptions or API keys needed
-
-**This is how you build open-source agentic workflows that actually ship.**
+- Leverage agents they already use
+- Works with Claude, Codex, or Gemini
+- Maintains their existing setup and preferences
+- No additional subscriptions or API keys
 
 ## How It Works
 
@@ -70,6 +54,12 @@ Install the SDK:
 ```bash
 npm install coding-agent-sdk
 ```
+
+**⚠️ Important: Auto-Approval Mode**
+
+By default, the SDK runs in "YOLO mode" (auto-approve enabled), which means coding agents will automatically execute actions without asking for your permission. This is designed for workflow automation but means tools will run, files will be modified, and commands will be executed automatically.
+
+If you need to control approvals, you can configure the approval policy through the underlying CLI tools.
 
 Build your workflow:
 
@@ -165,34 +155,16 @@ async function reviewPullRequest(prNumber: number) {
 
 Your users run this with Claude, Codex, or Gemini. Same workflow. Zero changes.
 
-## Building Workflows, Not Agents
+## Use Cases
 
-This SDK is designed for one thing: **building reusable workflows that delegate to existing agents.**
+This SDK is designed for building reusable workflows that delegate to existing agents:
 
-**What you should build:**
-- Code migration tools ("Convert this repo from JS to TS")
-- Automated reviewers ("Review this PR for security issues")
-- Testing assistants ("Generate e2e tests for this feature")
-- Deployment orchestrators ("Deploy to staging and run smoke tests")
+- Code migration tools (e.g., "Convert this repo from JS to TS")
+- Automated reviewers (e.g., "Review this PR for security issues")
+- Testing assistants (e.g., "Generate e2e tests for this feature")
+- Deployment orchestrators (e.g., "Deploy to staging and run smoke tests")
 
-**What you shouldn't build:**
-- Another general-purpose coding agent
-- Yet another AI chat interface
-- A wrapper that just adds a UI
-
-The insight: **Workflows are composable and distributable. Agents are not.**
-
-## Philosophy
-
-The future of agentic software is not a thousand competing agents.
-
-It's **workflows that compose existing agents.**
-
-- Agents handle the execution layer
-- Workflows handle the orchestration layer
-- They're decoupled
-
-This SDK is the thin layer between them. One unified interface. Three agents. Infinite workflows.
+The SDK provides a unified interface across different agents, letting you focus on workflow orchestration rather than agent-specific implementation details.
 
 ## Supported Agents
 
@@ -293,6 +265,4 @@ MIT
 
 ---
 
-**Stop rebuilding the wheel. Start building workflows.**
-
-[GitHub](https://github.com/yourusername/coding-agent-sdk) • [NPM](https://www.npmjs.com/package/coding-agent-sdk)
+[GitHub](https://github.com/gaojude/coding-agent-sdk) • [NPM](https://www.npmjs.com/package/coding-agent-sdk)

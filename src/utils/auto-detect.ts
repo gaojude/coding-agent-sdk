@@ -11,7 +11,6 @@ import { NoBackendFoundError, MultipleBackendsFoundError } from "../types.js";
 
 export interface DetectionResult {
   backend: Backend;
-  apiKey: string;
 }
 
 /**
@@ -275,7 +274,6 @@ export async function detectBackend(): Promise<DetectionResult> {
   // Return backend - let the CLI tools handle their own authentication
   return {
     backend,
-    apiKey: '', // Not needed - CLI tools handle auth themselves
   };
 }
 
@@ -286,37 +284,4 @@ export async function detectBackend(): Promise<DetectionResult> {
 export async function isBackendAvailable(backend: Backend): Promise<boolean> {
   const binaryName = backend; // binary name matches backend name
   return await isBinaryAvailable(binaryName);
-}
-
-/**
- * Get API key for a specific backend.
- *
- * @throws {Error} If API key is not set
- */
-export function getApiKey(backend: Backend): string {
-  let key: string | undefined;
-  let envVar: string;
-
-  switch (backend) {
-    case "claude":
-      key = process.env.ANTHROPIC_API_KEY;
-      envVar = "ANTHROPIC_API_KEY";
-      break;
-    case "codex":
-      key = process.env.OPENAI_API_KEY;
-      envVar = "OPENAI_API_KEY";
-      break;
-    case "gemini":
-      key = process.env.GEMINI_API_KEY;
-      envVar = "GEMINI_API_KEY";
-      break;
-  }
-
-  if (!key) {
-    throw new Error(
-      `Backend '${backend}' requires ${envVar} environment variable to be set`
-    );
-  }
-
-  return key;
 }

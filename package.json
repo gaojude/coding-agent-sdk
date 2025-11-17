@@ -1,7 +1,7 @@
 {
   "name": "coding-agent-sdk",
   "version": "0.2.4",
-  "description": "Build agentic workflows that delegate to your users' existing coding agents (Claude Code, Codex, Gemini). Stop building agents. Start building workflows.",
+  "description": "Build agentic workflows that delegate to your users' existing coding agents (Claude Code, Codex, Gemini).",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -39,8 +39,16 @@
     "sdk",
     "cli"
   ],
-  "author": "",
+  "author": "Jude Gao",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gaojude/coding-agent-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gaojude/coding-agent-sdk/issues"
+  },
+  "homepage": "https://github.com/gaojude/coding-agent-sdk#readme",
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^4.0.8",

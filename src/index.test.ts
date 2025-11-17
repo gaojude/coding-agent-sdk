@@ -16,7 +16,6 @@ vi.mock('./utils/auto-detect.js', async () => {
   return {
     ...actual,
     detectBackend: vi.fn(),
-    getApiKey: vi.fn(),
     isBackendAvailable: actual.isBackendAvailable,
   };
 });
@@ -47,11 +46,6 @@ describe('query function', () => {
 
   describe('backend selection', () => {
     it('should use explicitly specified backend', async () => {
-      process.env.ANTHROPIC_API_KEY = 'test-key';
-
-      // Mock getApiKey to not throw
-      vi.mocked(autoDetect.getApiKey).mockReturnValue('test-key');
-
       // Mock backend
       const mockEvents = (async function* () {
         yield {
@@ -72,12 +66,9 @@ describe('query function', () => {
     });
 
     it('should auto-detect backend when not specified', async () => {
-      process.env.OPENAI_API_KEY = 'test-key';
-
       // Mock auto-detection
       vi.mocked(autoDetect.detectBackend).mockResolvedValue({
         backend: 'codex',
-        apiKey: 'test-key',
       });
 
       // Mock backend
@@ -99,9 +90,6 @@ describe('query function', () => {
     });
 
     it('should return claude backend when specified', async () => {
-      process.env.ANTHROPIC_API_KEY = 'test-key';
-      vi.mocked(autoDetect.getApiKey).mockReturnValue('test-key');
-
       const mockEvents = (async function* () {
         yield {
           type: 'session' as const,
@@ -118,9 +106,6 @@ describe('query function', () => {
     });
 
     it('should return codex backend when specified', async () => {
-      process.env.OPENAI_API_KEY = 'test-key';
-      vi.mocked(autoDetect.getApiKey).mockReturnValue('test-key');
-
       const mockEvents = (async function* () {
         yield {
           type: 'session' as const,
@@ -137,9 +122,6 @@ describe('query function', () => {
     });
 
     it('should return gemini backend when specified', async () => {
-      process.env.GEMINI_API_KEY = 'test-key';
-      vi.mocked(autoDetect.getApiKey).mockReturnValue('test-key');
-
       const mockEvents = (async function* () {
         yield {
           type: 'session' as const,
@@ -157,11 +139,6 @@ describe('query function', () => {
   });
 
   describe('options handling', () => {
-    beforeEach(() => {
-      process.env.ANTHROPIC_API_KEY = 'test-key';
-      vi.mocked(autoDetect.getApiKey).mockReturnValue('test-key');
-    });
-
     it('should accept workingDir option', async () => {
       const mockEvents = (async function* () {
         yield {
@@ -249,11 +226,6 @@ describe('query function', () => {
   });
 
   describe('event streaming', () => {
-    beforeEach(() => {
-      process.env.ANTHROPIC_API_KEY = 'test-key';
-      vi.mocked(autoDetect.getApiKey).mockReturnValue('test-key');
-    });
-
     it('should stream events from backend', async () => {
       const mockEvents = (async function* () {
         yield {
@@ -353,11 +325,6 @@ describe('query function', () => {
   });
 
   describe('result object', () => {
-    beforeEach(() => {
-      process.env.ANTHROPIC_API_KEY = 'test-key';
-      vi.mocked(autoDetect.getApiKey).mockReturnValue('test-key');
-    });
-
     it('should return result with backend field', async () => {
       const mockEvents = (async function* () {
         yield {
