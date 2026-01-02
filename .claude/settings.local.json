@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "WebFetch(domain:ai-sdk.dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "WebFetch(domain:agentclientprotocol.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:agentclientprotocol.github.io)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

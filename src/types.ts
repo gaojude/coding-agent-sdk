@@ -1,189 +1,260 @@
 /**
- * Core types for coding-agent-sdk
+ * Types for coding-agent-sdk
+ *
+ * Re-exports ACP types directly and adds SDK-specific extensions.
  */
 
-import type { Backend, UnifiedEvent } from './events.js';
+// Re-export all ACP types
+export type {
+  // Core content types
+  ContentBlock,
+  TextContent,
+  ImageContent,
+  AudioContent,
+  ResourceLink,
+  EmbeddedResource,
+  Annotations,
 
-// ============================================================================
-// Query Options
-// ============================================================================
+  // Session types
+  SessionId,
+  SessionUpdate,
+  SessionNotification,
+  SessionInfo,
+  SessionMode,
+  SessionModeId,
+  SessionModeState,
 
-export interface QueryOptions {
+  // Tool call types
+  ToolCall,
+  ToolCallUpdate,
+  ToolCallContent,
+  ToolCallId,
+  ToolCallStatus,
+  ToolCallLocation,
+  ToolKind,
+  Diff,
+  Terminal,
+
+  // Plan types
+  Plan,
+  PlanEntry,
+  PlanEntryStatus,
+  PlanEntryPriority,
+
+  // Permission types
+  PermissionOption,
+  PermissionOptionId,
+  PermissionOptionKind,
+  RequestPermissionRequest,
+  RequestPermissionResponse,
+  RequestPermissionOutcome,
+
+  // Request/Response types
+  InitializeRequest,
+  InitializeResponse,
+  NewSessionRequest,
+  NewSessionResponse,
+  LoadSessionRequest,
+  LoadSessionResponse,
+  PromptRequest,
+  PromptResponse,
+  CancelNotification,
+
+  // Capability types
+  ClientCapabilities,
+  AgentCapabilities,
+  PromptCapabilities,
+  McpCapabilities,
+  FileSystemCapability,
+
+  // MCP types
+  McpServer,
+  McpServerStdio,
+  McpServerHttp,
+  McpServerSse,
+  EnvVariable,
+
+  // Protocol types
+  StopReason,
+  ProtocolVersion,
+  Implementation,
+  Role,
+
+  // Terminal types
+  CreateTerminalRequest,
+  CreateTerminalResponse,
+  TerminalOutputRequest,
+  TerminalOutputResponse,
+  TerminalExitStatus,
+
+  // File operation types
+  ReadTextFileRequest,
+  ReadTextFileResponse,
+  WriteTextFileRequest,
+  WriteTextFileResponse,
+
+  // Command types
+  AvailableCommand,
+  AvailableCommandsUpdate,
+} from "@agentclientprotocol/sdk";
+
+// Re-export classes and functions
+export {
+  ClientSideConnection,
+  AgentSideConnection,
+  TerminalHandle,
+  RequestError,
+  ndJsonStream,
+} from "@agentclientprotocol/sdk";
+
+// Re-export interfaces
+export type { Client, Agent, AnyMessage } from "@agentclientprotocol/sdk";
+
+// SDK-specific types
+
+/**
+ * Supported ACP provider types
+ */
+export type ProviderType = "claude" | "codex" | "gemini";
+
+/**
+ * Options for spawning provider processes
+ */
+export interface ProviderOptions {
+  /** Path to provider binary (overrides auto-detection) */
+  binaryPath?: string;
+
+  /** Additional arguments to pass to provider */
+  extraArgs?: string[];
+
+  /** Environment variables to add */
+  env?: Record<string, string>;
+
+  /** Timeout for provider startup in ms (default: 10000) */
+  startupTimeout?: number;
+}
+
+/**
+ * Claude-specific provider options
+ */
+export interface ClaudeProviderOptions extends ProviderOptions {
+  /** Use npx to run the provider (default: true) */
+  useNpx?: boolean;
+}
+
+/**
+ * Codex-specific provider options
+ */
+export interface CodexProviderOptions extends ProviderOptions {
+  /** Model to use */
+  model?: string;
+}
+
+/**
+ * Gemini-specific provider options
+ */
+export interface GeminiProviderOptions extends ProviderOptions {
+  /** Enable sandbox mode */
+  sandbox?: boolean;
+}
+
+/**
+ * MCP server configuration for SDK usage
+ */
+export interface MCPServerConfig {
+  name: string;
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
+/**
+ * Permission handler callback type
+ */
+export type PermissionHandler = (
+  request: import("@agentclientprotocol/sdk").RequestPermissionRequest
+) => Promise<PermissionResponse>;
+
+/**
+ * Permission response from handler
+ */
+export interface PermissionResponse {
+  optionId: string;
+}
+
+/**
+ * Options for creating a coding agent client
+ */
+export interface ClientOptions {
   /**
-   * Backend to use. If not specified, auto-detects from installed CLI binaries:
-   * - claude → 'claude'
-   * - codex → 'codex'
-   * - gemini → 'gemini'
+   * Provider to use. If not specified, auto-detects from available providers.
+   * Priority order: claude > codex > gemini
    */
-  backend?: Backend;
-
-  /**
-   * Session ID to resume from a previous session.
-   * Each backend stores sessions differently:
-   * - Claude: ~/.claude/sessions/{session_id}.jsonl
-   * - Codex: thread_id from previous run
-   * - Gemini: --resume {session_id}
-   */
-  resume?: string;
+  provider?: ProviderType;
 
   /**
    * Working directory for the agent.
-   * Defaults to current working directory (process.cwd())
+   * Defaults to process.cwd()
    */
-  workingDir?: string;
+  cwd?: string;
 
   /**
-   * Whether to auto-approve all tool executions (YOLO mode).
-   * Default: true (maximum permissions, no prompts)
+   * MCP servers to connect when creating sessions.
+   */
+  mcpServers?: MCPServerConfig[];
+
+  /**
+   * Provider-specific options for spawning.
+   */
+  providerOptions?: {
+    claude?: ClaudeProviderOptions;
+    codex?: CodexProviderOptions;
+    gemini?: GeminiProviderOptions;
+  };
+
+  /**
+   * Auto-approve all permission requests.
+   * Enables "YOLO mode" for fully automated workflows.
+   * Default: false
    */
   autoApprove?: boolean;
 
   /**
-   * Backend-specific options passed through as-is.
-   * Use this for advanced configuration specific to each backend.
+   * Custom permission handler for interactive approval.
+   * Called when autoApprove is false and a tool requires authorization.
    */
-  backendOptions?: {
-    claude?: ClaudeBackendOptions;
-    codex?: CodexBackendOptions;
-    gemini?: GeminiBackendOptions;
+  onPermissionRequest?: PermissionHandler;
+
+  /**
+   * Client capabilities to advertise during initialization.
+   */
+  clientCapabilities?: import("@agentclientprotocol/sdk").ClientCapabilities;
+
+  /**
+   * Client info to send during initialization.
+   */
+  clientInfo?: {
+    name: string;
+    version: string;
+    title?: string;
   };
 }
 
-// ============================================================================
-// Backend-Specific Options
-// ============================================================================
+/**
+ * Options for creating a new session
+ */
+export interface NewSessionOptions {
+  /** Working directory override */
+  cwd?: string;
 
-export interface ClaudeBackendOptions {
-  /**
-   * Path to Claude CLI executable.
-   * Default: 'claude' (searches in PATH)
-   */
-  cliPath?: string;
-
-  /**
-   * Maximum thinking tokens for extended thinking.
-   * Note: Not supported in --print mode
-   */
-  maxThinkingTokens?: number;
-
-  /**
-   * MCP servers to enable.
-   * Example: ['next-devtools-mcp']
-   */
-  mcpServers?: string[];
-
-  /**
-   * Custom permission mode.
-   * Default: 'yolo' (auto-approve all)
-   */
-  permissionMode?: 'acceptEdits' | 'bypassPermissions' | 'default' | 'plan';
+  /** MCP servers to connect */
+  mcpServers?: MCPServerConfig[];
 }
 
-export interface CodexBackendOptions {
-  /**
-   * Path to Codex CLI executable.
-   * Default: 'codex' (searches in PATH)
-   */
-  cliPath?: string;
-
-  /**
-   * Sandbox mode for Codex.
-   * Default: undefined (uses Codex default)
-   */
-  sandbox?: 'vm' | 'container' | 'none';
-
-  /**
-   * Whether to enable structured output mode.
-   * Default: false
-   */
-  structuredOutput?: boolean;
-
-  /**
-   * Path to JSON schema file for structured output.
-   * Required if structuredOutput is true.
-   */
-  outputSchemaFile?: string;
-}
-
-export interface GeminiBackendOptions {
-  /**
-   * Path to Gemini CLI executable.
-   * Default: 'gemini' (searches in PATH)
-   */
-  cliPath?: string;
-
-  /**
-   * Additional CLI arguments to pass to Gemini.
-   * Example: ['--verbose', '--debug']
-   */
-  cliArgs?: string[];
-}
-
-// ============================================================================
-// Query Result
-// ============================================================================
-
-export interface QueryResult {
-  /**
-   * Unique session ID for this query.
-   * Can be used with options.resume to continue the conversation.
-   */
+/**
+ * Options for loading an existing session
+ */
+export interface LoadSessionOptions extends NewSessionOptions {
+  /** Session ID to load */
   sessionId: string;
-
-  /**
-   * Async generator that yields unified events as they occur.
-   * Iterate with `for await (const event of result.events)`
-   */
-  events: AsyncGenerator<UnifiedEvent, void, unknown>;
-
-  /**
-   * Backend that was used for this query.
-   */
-  backend: Backend;
-}
-
-// ============================================================================
-// Error Types
-// ============================================================================
-
-export class CodingAgentError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public backend?: Backend
-  ) {
-    super(message);
-    this.name = 'CodingAgentError';
-  }
-}
-
-export class BackendNotAvailableError extends CodingAgentError {
-  constructor(backend: Backend, reason: string) {
-    super(
-      `Backend '${backend}' is not available: ${reason}`,
-      'BACKEND_NOT_AVAILABLE',
-      backend
-    );
-    this.name = 'BackendNotAvailableError';
-  }
-}
-
-export class NoBackendFoundError extends CodingAgentError {
-  constructor(message?: string) {
-    super(
-      message || 'No backend could be auto-detected. Please install at least one agent CLI: claude, codex, or gemini.',
-      'NO_BACKEND_FOUND'
-    );
-    this.name = 'NoBackendFoundError';
-  }
-}
-
-export class MultipleBackendsFoundError extends CodingAgentError {
-  constructor(backends: Backend[]) {
-    super(
-      `Multiple backends detected: ${backends.join(', ')}. Please specify options.backend explicitly.`,
-      'MULTIPLE_BACKENDS_FOUND'
-    );
-    this.name = 'MultipleBackendsFoundError';
-  }
 }

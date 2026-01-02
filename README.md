@@ -1,37 +1,34 @@
-
-
-
-
 # coding-agent-sdk
 
-Build agentic workflows that delegate to your users' existing coding agents—Claude Code, Codex, or Gemini.
+Build agentic workflows that work with Claude Code, Codex CLI, Gemini CLI, and other coding agents.
 
 ```typescript
-import { query } from 'coding-agent-sdk';
+import { createClient, streamText } from 'coding-agent-sdk';
 
 // One API. Works with whatever agent your user has.
-await query("Refactor the auth module");
+for await (const text of streamText("Refactor the auth module")) {
+  process.stdout.write(text);
+}
 ```
 
 ## Overview
 
-This SDK enables you to build agentic workflows (code reviewers, migration tools, testing assistants) that leverage coding agents your users already have installed. Instead of embedding your own agent, delegate tasks to the user's existing setup—whether that's Claude Code, Codex, or Gemini.
+This SDK enables you to build agentic workflows (code reviewers, migration tools, testing assistants) that leverage coding agents your users already have installed. Instead of embedding your own agent, delegate tasks to the user's existing setup.
 
 ```typescript
-// Your workflow
-async function migrateToTypeScript() {
-  await query("Find all .js files in src/");
-  await query("Convert them to TypeScript");
-  await query("Fix any type errors");
-  await query("Run the test suite");
-}
-```
+const client = createClient({ provider: 'claude' });
+await client.connect();
 
-The SDK handles:
-- Auto-detection of available agents (Claude, Codex, or Gemini)
-- Translation of requests into the appropriate format
-- Unified event streaming across different agents
-- Single API that works with all supported agents
+const session = await client.newSession();
+
+for await (const update of session.prompt("Fix the bug in auth.ts")) {
+  if (update.sessionUpdate === 'agent_message_chunk') {
+    process.stdout.write(update.content.text);
+  }
+}
+
+await client.disconnect();
+```
 
 ## Benefits
 
@@ -43,138 +40,9 @@ The SDK handles:
 
 **For users:**
 - Leverage agents they already use
-- Works with Claude, Codex, or Gemini
+- Works with Claude Code, Codex CLI, or Gemini CLI
 - Maintains their existing setup and preferences
 - No additional subscriptions or API keys
-
-## How It Works
-
-Install the SDK:
-
-```bash
-npm install coding-agent-sdk
-```
-
-**⚠️ Important: Auto-Approval Mode**
-
-By default, the SDK runs in "YOLO mode" (auto-approve enabled), which means coding agents will automatically execute actions without asking for your permission. This is designed for workflow automation but means tools will run, files will be modified, and commands will be executed automatically.
-
-If you need to control approvals, you can configure the approval policy through the underlying CLI tools.
-
-Build your workflow:
-
-```typescript
-import { query } from 'coding-agent-sdk';
-
-// Your workflow delegates to the user's agent
-const result = await query("Deploy the application");
-
-// Stream events as they happen
-for await (const event of result.events) {
-  if (event.type === 'message') {
-    console.log(event.content);
-  }
-}
-```
-
-Your user runs it with their existing agent:
-
-```bash
-# They already have Claude Code, Codex, or Gemini installed
-# They already have an API key
-# Your workflow just works
-```
-
-The SDK:
-1. Auto-detects which agent they have
-2. Spawns the right CLI process
-3. Parses the output into unified events
-4. Returns a clean stream you can work with
-
-## The API
-
-One function. That's it.
-
-```typescript
-query(prompt: string, options?: QueryOptions): Promise<QueryResult>
-```
-
-**Parameters:**
-- `prompt` - What you want the agent to do
-- `options` - Optional backend, session resume, working directory
-
-**Returns:**
-- `sessionId` - Resume the conversation later
-- `events` - Async generator of unified events
-- `backend` - Which agent was used
-
-**Example:**
-
-```typescript
-import { query } from 'coding-agent-sdk';
-
-const result = await query("Add error handling to the API routes");
-
-for await (const event of result.events) {
-  switch (event.type) {
-    case 'message':   // AI responses
-    case 'action':    // File changes, tool calls
-    case 'progress':  // Todo lists, status updates
-    case 'turn':      // Conversation boundaries
-    case 'session':   // Session lifecycle
-    case 'error':     // Warnings and errors
-    case 'metrics':   // Usage statistics
-  }
-}
-```
-
-## Real-World Example
-
-Here's a code review workflow that works with any agent:
-
-```typescript
-import { query } from 'coding-agent-sdk';
-
-async function reviewPullRequest(prNumber: number) {
-  // Step 1: Get the diff
-  const diffResult = await query(`Get the git diff for PR #${prNumber}`);
-
-  // Step 2: Review the changes
-  const reviewResult = await query(
-    `Review this code for:
-    - Security vulnerabilities
-    - Performance issues
-    - Best practices
-    - Test coverage`
-  );
-
-  // Step 3: Suggest improvements
-  await query("Suggest specific improvements with code examples");
-}
-```
-
-Your users run this with Claude, Codex, or Gemini. Same workflow. Zero changes.
-
-## Use Cases
-
-This SDK is designed for building reusable workflows that delegate to existing agents:
-
-- Code migration tools (e.g., "Convert this repo from JS to TS")
-- Automated reviewers (e.g., "Review this PR for security issues")
-- Testing assistants (e.g., "Generate e2e tests for this feature")
-- Deployment orchestrators (e.g., "Deploy to staging and run smoke tests")
-
-The SDK provides a unified interface across different agents, letting you focus on workflow orchestration rather than agent-specific implementation details.
-
-## Supported Agents
-
-| Agent | CLI | API Key |
-|-------|-----|---------|
-| Claude Code | `claude` | `ANTHROPIC_API_KEY` |
-| OpenAI Codex | `codex` | `OPENAI_API_KEY` |
-| Google Gemini | `gemini` | `GEMINI_API_KEY` |
-
-The SDK auto-detects which one is available. Your workflow just works.
 
 ## Installation
 
@@ -183,76 +51,201 @@ npm install coding-agent-sdk
 ```
 
 Your users need:
-1. One of the supported CLIs installed (Claude Code, Codex, or Gemini)
+1. One of the supported agents installed (Claude Code, Codex CLI, or Gemini CLI)
 2. The corresponding API key in their environment
 
-That's it. No SDK API keys. No additional setup.
+## Quick Start
 
-## Advanced Usage
-
-### Resume Sessions
+### One-liner for simple tasks
 
 ```typescript
-const result1 = await query("Start the refactor");
-const sessionId = result1.sessionId;
+import { streamText } from 'coding-agent-sdk';
 
-// Later...
-const result2 = await query("Continue", { resume: sessionId });
+for await (const text of streamText("Explain this codebase")) {
+  process.stdout.write(text);
+}
 ```
 
-### Specify Backend
+### Full control with Client and Session
 
 ```typescript
-await query("Deploy", {
-  backend: 'claude',
-  workingDir: '/path/to/project'
+import { createClient } from 'coding-agent-sdk';
+
+const client = createClient({
+  provider: 'claude',  // or 'codex', 'gemini', or omit for auto-detect
+  autoApprove: true,   // auto-approve tool calls
+});
+
+await client.connect();
+
+const session = await client.newSession();
+
+// Stream updates as they happen
+for await (const update of session.prompt("Add tests for the User model")) {
+  switch (update.sessionUpdate) {
+    case 'agent_message_chunk':
+      process.stdout.write(update.content.text);
+      break;
+    case 'tool_call':
+      console.log(`\nTool: ${update.title}`);
+      break;
+    case 'plan':
+      console.log('Plan:', update.entries.map(e => e.content));
+      break;
+  }
+}
+
+await client.disconnect();
+```
+
+### Collect all updates (non-streaming)
+
+```typescript
+import { prompt } from 'coding-agent-sdk';
+
+const { updates, stopReason } = await prompt("List all TODO comments");
+
+for (const update of updates) {
+  // Process updates after completion
+}
+```
+
+## API Reference
+
+### Convenience Functions
+
+```typescript
+// Stream text only
+streamText(prompt: string, options?: ClientOptions): AsyncGenerator<string>
+
+// Stream all updates
+streamPrompt(prompt: string, options?: ClientOptions): AsyncGenerator<SessionUpdate>
+
+// Collect all updates
+prompt(prompt: string, options?: ClientOptions): Promise<{ updates, stopReason }>
+
+// Create a client
+createClient(options?: ClientOptions): CodingAgentClient
+```
+
+### CodingAgentClient
+
+```typescript
+const client = createClient(options);
+
+await client.connect();           // Connect to the agent
+await client.newSession();        // Create a new conversation
+await client.loadSession(opts);   // Resume an existing session
+await client.disconnect();        // Clean up
+
+client.isConnected;               // Check connection status
+client.providerType;              // 'claude' | 'codex' | 'gemini'
+```
+
+### Session
+
+```typescript
+const session = await client.newSession();
+
+// Stream updates
+for await (const update of session.prompt("Fix the bug")) {
+  // handle update
+}
+
+// Or collect all
+const { updates, stopReason } = await session.promptAndCollect("Fix the bug");
+
+// Control
+await session.cancel();           // Cancel current operation
+await session.setMode('code');    // Set session mode
+
+session.sessionId;                // Get session ID for resuming
+session.stopReason;               // Get last stop reason
+```
+
+### ClientOptions
+
+```typescript
+interface ClientOptions {
+  provider?: 'claude' | 'codex' | 'gemini';  // Auto-detects if omitted
+  cwd?: string;                               // Working directory
+  autoApprove?: boolean;                      // Auto-approve tool calls
+  mcpServers?: MCPServerConfig[];             // MCP servers to connect
+  onPermissionRequest?: PermissionHandler;    // Custom permission handling
+}
+```
+
+### SessionUpdate Types
+
+Updates have a `sessionUpdate` field indicating the type:
+
+| Type | Description |
+|------|-------------|
+| `agent_message_chunk` | Text from the agent |
+| `tool_call` | Tool invocation started |
+| `tool_call_update` | Tool execution progress |
+| `plan` | Agent's execution plan |
+
+## Real-World Example
+
+```typescript
+import { createClient, collectText } from 'coding-agent-sdk';
+
+async function reviewPullRequest(prNumber: number) {
+  const client = createClient({ autoApprove: true });
+  await client.connect();
+
+  try {
+    const session = await client.newSession();
+
+    // Get the diff
+    await session.promptAndCollect(`Get the git diff for PR #${prNumber}`);
+
+    // Review the changes
+    for await (const update of session.prompt(`
+      Review this code for:
+      - Security vulnerabilities
+      - Performance issues
+      - Best practices
+    `)) {
+      if (update.sessionUpdate === 'agent_message_chunk') {
+        process.stdout.write(update.content.text);
+      }
+    }
+  } finally {
+    await client.disconnect();
+  }
+}
+```
+
+## Supported Agents
+
+| Agent | Provider | Requires |
+|-------|----------|----------|
+| Claude Code | `claude` | `ANTHROPIC_API_KEY` |
+| Codex CLI | `codex` | `OPENAI_API_KEY` |
+| Gemini CLI | `gemini` | `GEMINI_API_KEY` |
+
+The SDK auto-detects which agent is available if you don't specify a provider.
+
+## Auto-Approval Mode
+
+By default, `autoApprove` is `false`. When enabled, the SDK automatically approves tool calls without user interaction—useful for automation but means files will be modified and commands executed automatically.
+
+```typescript
+// Enable auto-approval for automation
+const client = createClient({ autoApprove: true });
+
+// Or handle permissions manually
+const client = createClient({
+  onPermissionRequest: async (request) => {
+    console.log(`Permission requested: ${request.title}`);
+    return { optionId: 'allow_once' };
+  }
 });
 ```
 
-### Stream Progress
-
-```typescript
-const result = await query("Migrate to TypeScript");
-
-for await (const event of result.events) {
-  if (event.type === 'progress' && event.todo_items) {
-    console.log(`Progress: ${event.todo_items.filter(t => t.status === 'completed').length}/${event.todo_items.length} tasks done`);
-  }
-}
-```
-
-### Monitor Actions
-
-```typescript
-const result = await query("Deploy to production");
-
-for await (const event of result.events) {
-  if (event.type === 'action' && event.subtype === 'tool') {
-    console.log(`Action: ${event.tool_name} - ${event.status}`);
-  }
-}
-```
-
-## See It In Action
-
-Want to see the magic? Run this:
-
-```bash
-npx coding-agent-sdk -p "List all TypeScript files"
-```
-
-The SDK will:
-1. Auto-detect which agent you have installed (Claude, Codex, or Gemini)
-2. Delegate the task to that agent
-3. Stream back the results
-
-No configuration. No setup. It just works.
-
-The real value is the `query()` API for building workflows, but this shows you how it automatically detects and delegates to whatever agent your users have.
-
 ## Contributing
-
-We're building the interface layer between workflows and agents. PRs welcome.
 
 ```bash
 npm test              # Run tests
