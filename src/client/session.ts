@@ -12,6 +12,7 @@ import type {
 } from "@agentclientprotocol/sdk";
 
 import type { ClientOptions } from "../types.js";
+import { ConnectionClosedError } from "../errors.js";
 
 /**
  * Represents a conversation session with a coding agent
@@ -36,9 +37,11 @@ import type { ClientOptions } from "../types.js";
  */
 export class Session {
   private pendingUpdates: SessionUpdate[] = [];
-  private updateResolver: ((update: SessionUpdate) => void) | null = null;
+  private updateResolver: ((update: SessionUpdate | null) => void) | null =
+    null;
   private promptComplete = false;
   private lastStopReason: StopReason = "end_turn";
+  private connectionClosed = false;
 
   constructor(
     private connection: ClientSideConnection,
@@ -54,6 +57,17 @@ export class Session {
         this.handleUpdate(notification.update);
       }
     });
+
+    // Listen for connection closure to unblock pending operations
+    this.connection.signal.addEventListener("abort", () => {
+      this.connectionClosed = true;
+      this.promptComplete = true;
+      // Unblock any waiting promises
+      if (this.updateResolver) {
+        this.updateResolver(null);
+        this.updateResolver = null;
+      }
+    });
   }
 
   /**
@@ -63,6 +77,10 @@ export class Session {
   async *prompt(
     content: ContentBlock[] | string
   ): AsyncGenerator<SessionUpdate, StopReason, void> {
+    if (this.connectionClosed) {
+      throw new ConnectionClosedError();
+    }
+
     const blocks: ContentBlock[] =
       typeof content === "string"
         ? [{ type: "text", text: content }]
@@ -82,7 +100,20 @@ export class Session {
         this.promptComplete = true;
         // Signal completion
         if (this.updateResolver) {
-          this.updateResolver(null as unknown as SessionUpdate);
+          this.updateResolver(null);
+          this.updateResolver = null;
+        }
+      })
+      .catch((error) => {
+        // Connection closed or other error - mark as complete
+        this.promptComplete = true;
+        if (this.updateResolver) {
+          this.updateResolver(null);
+          this.updateResolver = null;
+        }
+        // Only throw if not a connection closure
+        if (!this.connectionClosed) {
+          throw error;
         }
       });
 
@@ -101,8 +132,17 @@ export class Session {
       yield update;
     }
 
-    // Wait for prompt to fully complete
-    await promptPromise;
+    // Wait for prompt to fully complete (with connection closure handling)
+    if (!this.connectionClosed) {
+      try {
+        await promptPromise;
+      } catch {
+        // Ignore errors if connection was closed
+        if (!this.connectionClosed) {
+          throw new ConnectionClosedError();
+        }
+      }
+    }
 
     return this.lastStopReason;
   }
@@ -136,6 +176,9 @@ export class Session {
    * Cancel the current prompt operation.
    */
   async cancel(): Promise<void> {
+    if (this.connectionClosed) {
+      return;
+    }
     await this.connection.cancel({ sessionId: this.sessionId });
   }
 
@@ -143,6 +186,9 @@ export class Session {
    * Set the session mode (e.g., 'ask', 'architect', 'code').
    */
   async setMode(modeId: string): Promise<void> {
+    if (this.connectionClosed) {
+      throw new ConnectionClosedError();
+    }
     await this.connection.setSessionMode({
       sessionId: this.sessionId,
       modeId,
@@ -154,6 +200,13 @@ export class Session {
    */
   get stopReason(): StopReason {
     return this.lastStopReason;
+  }
+
+  /**
+   * Check if the connection is closed.
+   */
+  get isClosed(): boolean {
+    return this.connectionClosed;
   }
 
   /**
@@ -172,6 +225,11 @@ export class Session {
    * Wait for the next update
    */
   private waitForUpdate(): Promise<SessionUpdate | null> {
+    // Check if connection is closed
+    if (this.connectionClosed) {
+      return Promise.resolve(null);
+    }
+
     // Check for pending updates first
     if (this.pendingUpdates.length > 0) {
       return Promise.resolve(this.pendingUpdates.shift()!);
@@ -184,7 +242,7 @@ export class Session {
 
     // Wait for next update
     return new Promise((resolve) => {
-      this.updateResolver = resolve as (update: SessionUpdate) => void;
+      this.updateResolver = resolve;
     });
   }
 }

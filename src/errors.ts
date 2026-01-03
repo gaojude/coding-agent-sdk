@@ -134,3 +134,13 @@ export class ProviderNotFoundError extends ACPSDKError {
     this.name = "ProviderNotFoundError";
   }
 }
+
+/**
+ * Error thrown when the connection is closed
+ */
+export class ConnectionClosedError extends ACPSDKError {
+  constructor() {
+    super("Connection is closed", "CONNECTION_CLOSED");
+    this.name = "ConnectionClosedError";
+  }
+}

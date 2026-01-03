@@ -179,13 +179,60 @@ export class CodingAgentClient {
    * Disconnect and clean up resources.
    */
   async disconnect(): Promise<void> {
-    if (this.process && !this.process.killed) {
-      this.process.kill();
-    }
+    const childProcess = this.process;
+    const connection = this.connection;
+
+    // Clear references first to prevent any new operations
     this.connection = null;
     this.process = null;
     this.provider = null;
     this.sessionUpdateHandler = null;
+
+    if (childProcess) {
+      // Destroy streams to prevent keeping event loop alive
+      childProcess.stdin?.destroy();
+      childProcess.stdout?.destroy();
+      childProcess.stderr?.destroy();
+
+      // Remove all listeners to prevent memory leaks
+      childProcess.removeAllListeners();
+
+      if (!childProcess.killed) {
+        // Kill the process
+        childProcess.kill();
+
+        // Wait for connection to close (with timeout to prevent hanging)
+        if (connection) {
+          const timeout = new Promise<void>((resolve) =>
+            setTimeout(resolve, 5000).unref()
+          );
+          await Promise.race([connection.closed, timeout]);
+        }
+
+        // Wait for process to actually exit (with timeout)
+        await new Promise<void>((resolve) => {
+          const timeoutId = setTimeout(() => {
+            childProcess.kill("SIGKILL"); // Force kill if still running
+            resolve();
+          }, 2000);
+          timeoutId.unref();
+
+          childProcess.once("exit", () => {
+            clearTimeout(timeoutId);
+            resolve();
+          });
+
+          // If already exited, resolve immediately
+          if (childProcess.killed || childProcess.exitCode !== null) {
+            clearTimeout(timeoutId);
+            resolve();
+          }
+        });
+      }
+
+      // Unref the process so it doesn't keep the event loop alive
+      childProcess.unref();
+    }
   }
 
   /**
